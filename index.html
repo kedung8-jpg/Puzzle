@@ -57,28 +57,30 @@
         let timerInterval;
         let gameActive = false;
 
-        // Membuat efek suara klik murni dari sistem browser (Tanpa Link / File Luar)
+        // Inisialisasi AudioContext global agar tidak "tidur"
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
         function playClick() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime); // Nada suara
-                oscillator.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
-                
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.08);
-            } catch (e) {
-                console.log("Audio error:", e);
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'triangle'; // Suara lebih mantap/terasa
+            oscillator.frequency.setValueAtTime(450, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+            
+            gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.05);
         }
 
         function getColorClass(num) {
@@ -127,7 +129,11 @@
         }
 
         function shuffle() {
-            playClick(); // Bunyi saat tombol acak ditekan
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            playClick();
+            
             tiles = Array.from({length: size * size - 1}, (_, i) => i + 1).concat("");
             for (let i = 0; i < 300; i++) {
                 const emptyIndex = tiles.indexOf("");
