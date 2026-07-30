@@ -57,30 +57,37 @@
         let timerInterval;
         let gameActive = false;
 
-        // Inisialisasi AudioContext global agar tidak "tidur"
+        // Menggunakan Web Audio API yang disempurnakan agar tidak ada suara yang terlewat
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
+        let audioCtx = null;
 
         function playClick() {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+            try {
+                if (!audioCtx) {
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+                
+                gainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.04);
+            } catch (e) {
+                console.log("Audio error:", e);
             }
-            
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            oscillator.type = 'triangle'; // Suara lebih mantap/terasa
-            oscillator.frequency.setValueAtTime(450, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-            
-            gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.05);
         }
 
         function getColorClass(num) {
@@ -128,14 +135,13 @@
             }, 1000);
         }
 
+        // SISTEM ACAK BARU: Mensimulasikan langkah geser (Valid & Pasti Bisa Diselesaikan)
         function shuffle() {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
             playClick();
-            
             tiles = Array.from({length: size * size - 1}, (_, i) => i + 1).concat("");
-            for (let i = 0; i < 300; i++) {
+            
+            // Mengacak dengan cara menggeser kotak kosong sebanyak 350 langkah secara acak
+            for (let i = 0; i < 350; i++) {
                 const emptyIndex = tiles.indexOf("");
                 const row = Math.floor(emptyIndex / size), col = emptyIndex % size;
                 const validMoves = [];
@@ -143,9 +149,11 @@
                 if (row < size - 1) validMoves.push(emptyIndex + size);
                 if (col > 0) validMoves.push(emptyIndex - 1);
                 if (col < size - 1) validMoves.push(emptyIndex + 1);
+                
                 const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
                 [tiles[emptyIndex], tiles[randomMove]] = [tiles[randomMove], tiles[emptyIndex]];
             }
+
             render();
             gameActive = true;
             startTimer();
