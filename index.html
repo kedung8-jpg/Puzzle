@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Puzzle 5x5 + Timer + Suara</title>
+    <style>
+
+       
+        body { font-family: sans-serif; background: #ffffff; color: #fff; text-align: center; margin: 0; padding: 20px; }
+        h1 { margin-bottom: 5px; font-size: 24px; color: #000000}
+        #timer-box { font-size: 22px; font-weight: bold; margin: 10px 0; color: #f1c40f; background: #222; display: inline-block; padding: 5px 15px; border-radius: 10px; border: 1px solid #333; }
+        #puzzle { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-width: 350px; margin: 15px auto; background: #222; padding: 10px; border-radius: 10px; }
+        .tile { aspect-ratio: 1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 29px; font-weight: bold; border-radius: 5px; cursor: pointer; user-select: none; 
+        
+       box-shadow: 
+                inset 0px 0px 9px rgba(255, 255, 255, 0.5);
+   text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000, 
+        -1px  1px 0 #000, 
+         1px  1px 0 #000,
+         0px 2px 4px rgba(0,0,0,0.6); }
+        .color-blue { background: #3498db;}
+        .color-green { background: #2ecc71; }
+        .color-yellow { background: #f1c40f; }
+        .color-purple { background: #9b59b6; }
+        .color-red { background: #e74c3c; }
+        .tile.empty { background: #222; cursor: default; }
+        button { padding: 10px 20px; font-size: 16px; border: none; background: #2ecc71; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Sliding Puzzle 5x5</h1>
+    <div id="timer-box">Timer: <span id="timer">00:00</span></div>
+    <div id="puzzle"></div>
+    <button onclick="shuffle()">Start Game</button>
+
+     <h1> BY HP </h1>
+    <script>
+        const size = 5;
+        let tiles = Array.from({length: size * size - 1}, (_, i) => i + 1).concat("");
+        const puzzle = document.getElementById("puzzle");
+        
+        let startTime;
+        let timerInterval;
+        let gameActive = false;
+
+        // DI SINI TAUTAN LINK LENGKAP YANG SUDAH MENYATU
+        const clickSound = new Audio("https://docs.google.com/uc?export=download&id=1GGVJwqQS69GVjyhBp1A-hPS2LmdKMTiz"); 
+        clickSound.volume = 0.7;
+
+        function playClick() {
+            clickSound.currentTime = 0;
+            clickSound.play().catch(e => console.log("Menunggu interaksi awal"));
+        }
+
+        function getColorClass(num) {
+            if (num === "") return "empty";
+            if (num <= 5) return "color-blue";
+            if (num <= 10) return "color-green";
+            if (num <= 15) return "color-yellow";
+            if (num <= 20) return "color-purple";
+            return "color-red";
+        }
+
+        function render() {
+            puzzle.innerHTML = "";
+            tiles.forEach((tile, index) => {
+                const div = document.createElement("div");
+                div.className = `tile ${getColorClass(tile)}`;
+                div.innerText = tile;
+                if (tile !== "") div.onclick = () => move(index);
+                puzzle.appendChild(div);
+            });
+        }
+
+        function move(index) {
+            if (!gameActive) return;
+            const emptyIndex = tiles.indexOf("");
+            const row = Math.floor(index / size), col = index % size;
+            const eRow = Math.floor(emptyIndex / size), eCol = emptyIndex % size;
+            if (Math.abs(row - eRow) + Math.abs(col - eCol) === 1) {
+                [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+                playClick(); 
+                render();
+                setTimeout(checkWin, 100);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsedTime = Date.now() - startTime;
+                const minutes = Math.floor(elapsedTime / 60000);
+                const seconds = Math.floor((elapsedTime % 60000) / 1000);
+                document.getElementById("timer").innerText = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function shuffle() {
+            tiles = Array.from({length: size * size - 1}, (_, i) => i + 1).concat("");
+            for (let i = 0; i < 300; i++) {
+                const emptyIndex = tiles.indexOf("");
+                const row = Math.floor(emptyIndex / size), col = emptyIndex % size;
+                const validMoves = [];
+                if (row > 0) validMoves.push(emptyIndex - size);
+                if (row < size - 1) validMoves.push(emptyIndex + size);
+                if (col > 0) validMoves.push(emptyIndex - 1);
+                if (col < size - 1) validMoves.push(emptyIndex + 1);
+                const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                [tiles[emptyIndex], tiles[randomMove]] = [tiles[randomMove], tiles[emptyIndex]];
+            }
+            render();
+            gameActive = true;
+            startTimer();
+        }
+
+        function checkWin() {
+            const win = tiles.slice(0, -1).every((tile, i) => tile === i + 1);
+            if (win && tiles[tiles.length - 1] === "") {
+                clearInterval(timerInterval);
+                gameActive = false;
+                alert("Selamat! Anda Menang! Waktu: " + document.getElementById("timer").innerText);
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
+ 
