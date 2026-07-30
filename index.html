@@ -57,16 +57,28 @@
         let timerInterval;
         let gameActive = false;
 
-        // Menggunakan objek Audio standar
-        const clickSound = new Audio("https://docs.google.com/uc?export=download&id=1GGVJwqQS69GVjyhBp1A-hPS2LmdKMTiz"); 
-        clickSound.volume = 1.0;
-        clickSound.load(); // Memaksa browser memuat file audio lebih awal
-
+        // Membuat efek suara klik murni dari sistem browser (Tanpa Link / File Luar)
         function playClick() {
-            clickSound.currentTime = 0;
-            clickSound.play().catch(error => {
-                console.log("Audio diblokir browser, menunggu interaksi user:", error);
-            });
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime); // Nada suara
+                oscillator.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
+                
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.08);
+            } catch (e) {
+                console.log("Audio error:", e);
+            }
         }
 
         function getColorClass(num) {
@@ -115,12 +127,7 @@
         }
 
         function shuffle() {
-            // Membuka kunci audio secara paksa saat tombol diklik pertama kali
-            clickSound.play().then(() => {
-                clickSound.pause();
-                clickSound.currentTime = 0;
-            }).catch(e => {});
-
+            playClick(); // Bunyi saat tombol acak ditekan
             tiles = Array.from({length: size * size - 1}, (_, i) => i + 1).concat("");
             for (let i = 0; i < 300; i++) {
                 const emptyIndex = tiles.indexOf("");
